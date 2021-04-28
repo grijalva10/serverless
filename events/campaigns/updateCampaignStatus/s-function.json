@@ -1,0 +1,36 @@
+{
+  "name": "updateCampaignStatus",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-campaigns-updateCampaignStatus",
+  "customRole": false,
+  "handler": "campaigns/updateCampaignStatus/handler.default",
+  "timeout": 60,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [],
+  "events": [
+    {
+      "name": "updateCampaignSns",
+      "type": "sns",
+      "config": {
+        "topicName": "$${updateCampaignTopic}"
+      }
+    }
+  ],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "CAMPAIGNS_TABLE": "$${campaignsTable}",
+    "IOT_ENDPOINT": "${iotEndpoint}",
+    "UPDATE_CAMPAIGN_TOPIC_ARN": "${updateCampaignTopicARN}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

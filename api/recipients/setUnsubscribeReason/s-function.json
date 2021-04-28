@@ -1,0 +1,48 @@
+{
+  "name": "setUnsubscribeReason",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-recipients-setUnsubscribeReason",
+  "customRole": false,
+  "handler": "recipients/setUnsubscribeReason/handler.default",
+  "timeout": 6,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [
+    {
+      "path": "lists/{listId}/recipients/{recipientId}/unsubscribe-reason",
+      "method": "PATCH",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "listId": "$input.params('listId')",
+          "campaignId": "$input.params('campaignId')",
+          "recipientId": "$input.params('recipientId')",
+          "requestBody": "$input.json('$')"
+        }
+      },
+      "responses": "$${responses}"
+    }
+  ],
+  "events": [],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "RECIPIENTS_TABLE": "$${recipientsTable}",
+    "REPORTS_TABLE": "$${reportsTable}",
+    "LISTS_TABLE": "$${listsTable}",
+    "DEBUG": "true"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

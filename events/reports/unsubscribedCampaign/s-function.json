@@ -1,0 +1,34 @@
+{
+  "name": "unsubscribedCampaign",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-reports-unsubscribedCampaign",
+  "customRole": false,
+  "handler": "reports/unsubscribedCampaign/handler.default",
+  "timeout": 60,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [],
+  "events": [
+    {
+      "name": "unsubscribedRecipientSns",
+      "type": "sns",
+      "config": {
+        "topicName": "$${unsubscribedRecipientTopic}"
+      }
+    }
+  ],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "REPORTS_TABLE": "$${reportsTable}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

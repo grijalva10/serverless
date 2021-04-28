@@ -1,0 +1,35 @@
+{
+  "name": "incrementOpensCount",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-reports-incrementOpensCount",
+  "customRole": false,
+  "handler": "reports/incrementOpensCount/handler.default",
+  "timeout": 60,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [],
+  "events": [
+    {
+      "name": "incrementOpensStream",
+      "type": "dynamodbstream",
+      "config": {
+        "streamArn": "${opensTableStreamARN}",
+        "enabled": true
+      }
+    }
+  ],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "REPORTS_TABLE": "$${reportsTable}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

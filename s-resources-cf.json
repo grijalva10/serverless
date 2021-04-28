@@ -1,0 +1,1379 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application's resources outside of Lambdas and Api Gateway",
+  "Resources": {
+    "IamRoleLambda": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "IamPolicyLambda": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "${stage}-${project}-lambda",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:${region}:*:*"
+            },
+            "$${logsStatementTemplate}",
+            "$${lambdaStatementTemplate}",
+            "$${sqsStatementTemplate}",
+            "$${sesStatementTemplate}",
+            "$${kinesisStatementTemplate}",
+            "$${iotStatementTemplate}",
+            "$${apiGatewayStatementTemplate}",
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "RecipientsImportS3Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:*"
+              ],
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "ListExportS3Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": "dynamodb:*",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:dynamodb:${region}:",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":table/*"
+                  ]
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": "dynamodb:*",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:dynamodb:${region}:",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":table/*/index/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "IamRoleLambda"
+          }
+        ]
+      }
+    },
+    "EmailAdminsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${emailAdminsTopic}"
+      }
+    },
+    "EventsBusTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${eventsBusTopic}"
+      }
+    },
+    "SendEmailsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${sendEmailsTopic}"
+      }
+    },
+    "SendCampaignTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${sendCampaignTopic}"
+      }
+    },
+    "AttachSenderTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${attachSenderTopic}"
+      }
+    },
+    "UpdateUserReputationTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${updateUserReputationTopic}"
+      }
+    },
+    "EmailNotificationsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${emailNotificationsTopic}"
+      }
+    },
+    "EmailNotificationsTopicPolicy": {
+      "Type": "AWS::SNS::TopicPolicy",
+      "Properties": {
+        "PolicyDocument": {
+            "Version": "2008-10-17",
+            "Statement": [
+              {
+                "Sid": "__default_statement_ID",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": "*"
+                },
+                "Action": [
+                  "SNS:Publish",
+                  "SNS:RemovePermission",
+                  "SNS:SetTopicAttributes",
+                  "SNS:DeleteTopic",
+                  "SNS:ListSubscriptionsByTopic",
+                  "SNS:GetTopicAttributes",
+                  "SNS:Receive",
+                  "SNS:AddPermission",
+                  "SNS:Subscribe"
+                ],
+                "Resource": {"Ref": "EmailNotificationsTopic"},
+                "Condition": {
+                  "StringEquals": {
+                    "AWS:SourceOwner": {"Ref": "AWS::AccountId"}
+                  }
+                }
+              },
+              {
+                "Sid": "__console_pub_1",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": "*"
+                },
+                "Action": "SNS:Publish",
+                "Resource": {"Ref": "EmailNotificationsTopic"}
+              }
+            ]
+        },
+        "Topics": [{"Ref": "EmailNotificationsTopic"}]
+      }
+    },
+    "PrecompileCampaignTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${precompileCampaignTopic}"
+      }
+    },
+    "UpdateCampaignTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${updateCampaignTopic}"
+      }
+    },
+    "PrecompileEmailTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${precompileEmailTopic}"
+      }
+    },
+    "AttachRecipientsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${attachRecipientsTopic}"
+      }
+    },
+    "AttachListRecipientsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${attachListRecipientsTopic}"
+      }
+    },
+    "AttachSegmentRecipientsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${attachSegmentRecipientsTopic}"
+      }
+    },
+    "AttachRecipientsCountTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${attachRecipientsCountTopic}"
+      }
+    },
+    "UnsubscribedRecipientTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${unsubscribedRecipientTopic}"
+      }
+    },
+    "UpdateListImportStatusTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "$${updateListImportStatusTopic}"
+      }
+    },
+    "AwsMarketplaceNotificationsQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "${project}-${stage}-AwsMarketplaceNotifications"
+      }
+    },
+    "AwsMarketplaceNotificationsQueuePolicy" : {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "Properties" : {
+        "PolicyDocument" : {
+          "Id" : "AwsMarketplaceNotificationsQueuePolicy",
+          "Version" : "2012-10-17",
+          "Statement" : [ {
+            "Sid" : "Allow-User-SendMessage",
+            "Effect" : "Allow",
+            "Principal" : {
+            "AWS" : "${awsMarketplaceUserArn}"
+            },
+            "Action" : [ "sqs:SendMessage" ],
+            "Resource" : "*"
+          } ]
+        },
+        "Queues": [{ "Ref" : "AwsMarketplaceNotificationsQueue" }]
+      }
+    },
+    "FreeUsersSendEmailQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "${project}-${stage}-FreeUsersSendEmail"
+      }
+    },
+    "FreeUsersQueuePopulatedAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Alarm if free users queue is not empty",
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "FreeUsersSendEmailQueue",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Average",
+        "Period": "60",
+        "EvaluationPeriods": "1",
+        "Threshold": "1",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "AlarmActions": [
+          {
+            "Ref": "SendEmailsTopic"
+          }
+        ]
+      }
+    },
+    "LinksTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "id",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${linksTable}"
+      }
+    },
+    "ReportsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "CampaignsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "campaignId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "campaignId",
+            "KeyType": "HASH"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${reportsUserIndex}",
+            "KeySchema" : [{
+              "AttributeName": "userId",
+              "KeyType": "HASH"
+            }],
+            "Projection" : {
+              "ProjectionType": "ALL"
+            },
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${reportsTable}"
+      }
+    },
+    "CampaignsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "UsersTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "sentAt",
+            "AttributeType": "N"
+          },
+          {
+            "AttributeName": "scheduledAt",
+            "AttributeType": "N"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${campaignsScheduledAtIndex}",
+            "KeySchema" : [{
+              "AttributeName": "scheduledAt",
+              "KeyType": "HASH"
+            }],
+            "Projection" : {
+              "NonKeyAttributes" : ["sentAt", "status"],
+              "ProjectionType": "INCLUDE"
+            },
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${scheduledAtIndexRCU}",
+              "WriteCapacityUnits": "${scheduledAtIndexWCU}"
+            }
+          }
+        ],
+        "LocalSecondaryIndexes": [
+          {
+            "IndexName": "$${campaignsSentAtIndex}",
+            "KeySchema": [
+              {
+                "AttributeName": "userId",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "sentAt",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "KEYS_ONLY"
+            }
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${campaignsRCU}",
+          "WriteCapacityUnits": "${campaignsWCU}"
+        },
+        "TableName": "$${campaignsTable}"
+      }
+    },
+    "AutomationsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "UsersTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "LocalSecondaryIndexes": [
+          {
+            "IndexName": "$${automationStatusIndex}",
+            "KeySchema": [
+              {
+                "AttributeName": "userId",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "status",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {"ProjectionType": "ALL"}
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${automationsTable}"
+      }
+    },
+    "AutomationActionsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "AutomationsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "automationId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "footprint",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "automationId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${automationsFootprintStatusIndex}",
+            "KeySchema" : [
+              {
+                "AttributeName": "status",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "footprint",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection" : {"ProjectionType": "ALL"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${automationActionsTable}"
+      }
+    },
+    "ScheduledEmailsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "AutomationActionsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "automationActionId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "automationActionId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${scheduledEmailsTable}"
+      }
+    },
+    "UsersTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "email",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "apiKey",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "amazonCustomerId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "id",
+            "KeyType": "HASH"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${usersEmailIndex}",
+            "KeySchema" : [{
+              "AttributeName": "email",
+              "KeyType": "HASH"
+            }],
+            "Projection" : {"ProjectionType": "ALL"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          },
+          {
+            "IndexName" : "$${usersApiKeyIndex}",
+            "KeySchema" : [{
+              "AttributeName": "apiKey",
+              "KeyType": "HASH"
+            }],
+            "Projection" : {"ProjectionType": "ALL"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          },
+          {
+            "IndexName" : "$${usersAmazonCustomerIndex}",
+            "KeySchema" : [{
+              "AttributeName": "amazonCustomerId",
+              "KeyType": "HASH"
+            }],
+            "Projection" : {"ProjectionType": "KEYS_ONLY"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          }
+        ],
+        "StreamSpecification": {
+          "StreamViewType": "NEW_AND_OLD_IMAGES"
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${usersRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${usersTable}"
+      }
+    },
+    "TemplatesTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "UsersTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${templatesTable}"
+      }
+    },
+    "ListSegmentsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "ListsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "listId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "listId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${segmentIdIndex}",
+            "KeySchema" : [{
+              "AttributeName": "id",
+              "KeyType": "HASH"
+            }],
+            "Projection" : {"ProjectionType": "ALL"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${listSegmentsTable}"
+      }
+    },
+    "OpensStream": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1
+      }
+    },
+    "ClicksStream": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1
+      }
+    },
+    "EventsStream": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1
+      }
+    },
+    "RecipientsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "AutomationActionsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "listId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "listId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "StreamSpecification": {
+          "StreamViewType": "NEW_AND_OLD_IMAGES"
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${recipientsRCU}",
+          "WriteCapacityUnits": "${recipientsWCU}"
+        },
+        "TableName": "$${recipientsTable}"
+      }
+    },
+    "OpensTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CampaignsTable",
+        "RecipientsTable"
+      ],
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "campaignId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "recipientId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "recipientId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "campaignId",
+            "KeyType": "RANGE"
+          }
+        ],
+        "StreamSpecification": {
+          "StreamViewType": "NEW_IMAGE"
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${opensRCU}",
+          "WriteCapacityUnits": "${opensWCU}"
+        },
+        "TableName": "$${opensTable}"
+      }
+    },
+    "ClicksTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "LinksTable",
+        "RecipientsTable"
+      ],
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "linkId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "recipientId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "recipientId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "linkId",
+            "KeyType": "RANGE"
+          }
+        ],
+        "StreamSpecification": {
+          "StreamViewType": "NEW_IMAGE"
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${clicksRCU}",
+          "WriteCapacityUnits": "${clicksWCU}"
+        },
+        "TableName": "$${clicksTable}"
+      }
+    },
+    "OpensReportTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "CampaignsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "campaignId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "timestamp",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "campaignId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "timestamp",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${opensReportRCU}",
+          "WriteCapacityUnits": "${opensReportWCU}"
+        },
+        "TableName": "$${opensReportTable}"
+      }
+    },
+    "ClicksReportTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "CampaignsTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "campaignId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "timestamp",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "campaignId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "timestamp",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${clicksReportRCU}",
+          "WriteCapacityUnits": "${clicksReportWCU}"
+        },
+        "TableName": "$${clicksReportTable}"
+      }
+    },
+    "ListsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "UsersTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "id",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${listsRCU}",
+          "WriteCapacityUnits": "${listsWCU}"
+        },
+        "TableName": "$${listsTable}"
+      }
+    },
+    "ExpertsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "DependsOn": "UsersTable",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "expertType",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "country",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${expertsTable}",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${expertsTypeCountryIndex}",
+            "KeySchema" : [
+              {
+                "AttributeName": "expertType",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "country",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection" : {"ProjectionType": "ALL"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          }
+        ]
+      }
+    },
+    "PaymentLogsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "timestamp",
+            "AttributeType": "N"
+          },
+          {
+            "AttributeName": "affiliateRef",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "id",
+            "KeyType": "HASH"
+          }
+        ],
+        "StreamSpecification": {
+          "StreamViewType": "NEW_AND_OLD_IMAGES"
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "${defaultRCU}",
+          "WriteCapacityUnits": "${defaultWCU}"
+        },
+        "TableName": "$${paymentLogsTable}",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName" : "$${paymentLogsAffiliateRefIndex}",
+            "KeySchema" : [
+              {
+                "AttributeName": "affiliateRef",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "timestamp",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection" : {"ProjectionType": "ALL"},
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits": "${defaultRCU}",
+              "WriteCapacityUnits": "${defaultWCU}"
+            }
+          }
+        ]
+      }
+    },
+    "RecipientsImportS3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicReadWrite",
+        "BucketName": "$${recipientsImportBucket}",
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": ["*"],
+              "AllowedMethods": [
+                "GET",
+                "PUT",
+                "POST",
+                "HEAD"
+              ],
+              "AllowedOrigins": ["*"],
+              "ExposedHeaders": [
+                "x-amz-server-side-encryption",
+                "x-amz-request-id",
+                "x-amz-id-2"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ListExportS3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "$${listsExportBucket}"
+      }
+    },
+    "StaticDataBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicReadWrite",
+        "BucketName": "$${staticDataBucket}",
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [],
+              "AllowedMethods": [
+                "GET",
+                "PUT",
+                "POST",
+                "HEAD"
+              ],
+              "AllowedOrigins": ["*"]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "IamRoleArnLambda": {
+      "Description": "ARN of the lambda IAM role",
+      "Value": {
+        "Fn::GetAtt": [
+          "IamRoleLambda",
+          "Arn"
+        ]
+      }
+    },
+    "QueueURL": {
+      "Description": "URL of newly created SQS Queue",
+      "Value": {
+        "Ref": "FreeUsersSendEmailQueue"
+      }
+    },
+    "QueueARN": {
+      "Description": "ARN of newly created SQS Queue",
+      "Value": {
+        "Fn::GetAtt": [
+          "FreeUsersSendEmailQueue",
+          "Arn"
+        ]
+      }
+    },
+    "QueueName": {
+      "Description": "Name newly created SQS Queue",
+      "Value": {
+        "Fn::GetAtt": [
+          "FreeUsersSendEmailQueue",
+          "QueueName"
+        ]
+      }
+    },
+    "EmailAdminsTopicARN": {
+      "Description": "ARN of the EmailAdmins SNS topic",
+      "Value": {
+        "Ref": "EmailAdminsTopic"
+      }
+    },
+    "EventsBusTopicARN": {
+      "Description": "ARN of the EventsBus SNS topic",
+      "Value": {
+        "Ref": "EventsBusTopic"
+      }
+    },
+    "PrecompileCampaignTopicARN": {
+      "Description": "ARN of the PrecompileCampaign SNS topic",
+      "Value": {
+        "Ref": "PrecompileCampaignTopic"
+      }
+    },
+    "UnsubscribedRecipientTopicARN": {
+      "Description": "ARN of the UnsubscribedRecipientTopic SNS topic",
+      "Value": {
+        "Ref": "UnsubscribedRecipientTopic"
+      }
+    },
+    "UpdateCampaignTopicARN": {
+      "Description": "ARN of the UpdateCampaign SNS topic",
+      "Value": {
+        "Ref": "UpdateCampaignTopic"
+      }
+    },
+    "SendCampaignTopicARN": {
+      "Description": "ARN of the SendCampaign SNS topic",
+      "Value": {
+        "Ref": "SendCampaignTopic"
+      }
+    },
+    "SendEmailsTopicARN": {
+      "Description": "ARN of the SendEmails SNS topic",
+      "Value": {
+        "Ref": "SendEmailsTopic"
+      }
+    },
+    "EmailNotificationsTopicARN": {
+      "Description": "ARN of the EmailNotifications SNS topic",
+      "Value": {
+        "Ref": "EmailNotificationsTopic"
+      }
+    },
+    "AttachRecipientsTopicARN": {
+      "Description": "ARN of the AttachRecipients SNS topic",
+      "Value": {
+        "Ref": "AttachRecipientsTopic"
+      }
+    },
+    "AttachListRecipientsTopicARN": {
+      "Description": "ARN of the AttachListRecipients SNS topic",
+      "Value": {
+        "Ref": "AttachListRecipientsTopic"
+      }
+    },
+    "AttachSegmentRecipientsTopicARN": {
+      "Description": "ARN of the AttachSegmentRecipients SNS topic",
+      "Value": {
+        "Ref": "AttachSegmentRecipientsTopic"
+      }
+    },
+    "AttachSenderTopicARN": {
+      "Description": "ARN of the AttachSender SNS topic",
+      "Value": {
+        "Ref": "AttachSenderTopic"
+      }
+    },
+    "UpdateUserReputationTopicARN": {
+      "Description": "ARN of the UpdateUserReputation SNS topic",
+      "Value": {
+        "Ref": "UpdateUserReputationTopic"
+      }
+    },
+    "AttachRecipientsCountTopicARN": {
+      "Description": "ARN of the AttachRecipientsCount SNS topic",
+      "Value": {
+        "Ref": "AttachRecipientsCountTopic"
+      }
+    },
+    "UpdateListImportStatusTopicARN": {
+      "Description": "ARN of the UpdateListImportStatus SNS topic",
+      "Value": {
+        "Ref": "UpdateListImportStatusTopic"
+      }
+    },
+    "EventsStreamName": {
+      "Description": "Name of the Opens Kinesis Stream",
+      "Value": {
+        "Ref": "EventsStream"
+      }
+    },
+    "EventsStreamARN": {
+      "Description": "Name of the Opens Kinesis Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "EventsStream",
+          "Arn"
+        ]
+      }
+    },
+    "OpensStreamName": {
+      "Description": "Name of the Opens Kinesis Stream",
+      "Value": {
+        "Ref": "OpensStream"
+      }
+    },
+    "OpensStreamARN": {
+      "Description": "Name of the Opens Kinesis Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "OpensStream",
+          "Arn"
+        ]
+      }
+    },
+    "ClicksStreamName": {
+      "Description": "Name of the Clicks Kinesis Stream",
+      "Value": {
+        "Ref": "ClicksStream"
+      }
+    },
+    "ClicksStreamARN": {
+      "Description": "Name of the Clicks Kinesis Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "ClicksStream",
+          "Arn"
+        ]
+      }
+    },
+    "PrecompileEmailTopicARN": {
+      "Description": "ARN of the PrecompileEmailTopic SNS topic",
+      "Value": {
+        "Ref": "PrecompileEmailTopic"
+      }
+    },
+    "RecipientsImportS3BucketName": {
+      "Description": "ARN of the RecipientsImportS3Bucket",
+      "Value": {
+        "Ref": "RecipientsImportS3Bucket"
+      }
+    },
+    "RecipientsTableStreamARN": {
+      "Description": "Arn of the Recipients DynamoDB Table Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "RecipientsTable",
+          "StreamArn"
+        ]
+      }
+    },
+    "ClicksTableStreamARN": {
+      "Description": "Arn of the ClicksTable DynamoDB Table Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "ClicksTable",
+          "StreamArn"
+        ]
+      }
+    },
+    "OpensTableStreamARN": {
+      "Description": "Arn of the OpensTable DynamoDB Table Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "OpensTable",
+          "StreamArn"
+        ]
+      }
+    },
+    "UsersTableStreamARN": {
+      "Description": "Arn of the Users DynamoDB Table Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "UsersTable",
+          "StreamArn"
+        ]
+      }
+    },
+    "PaymentLogsTableStreamARN": {
+      "Description": "Arn of the PaymentLogs DynamoDB Table Stream",
+      "Value": {
+        "Fn::GetAtt": [
+          "PaymentLogsTable",
+          "StreamArn"
+        ]
+      }
+    }
+  }
+}

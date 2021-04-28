@@ -1,0 +1,64 @@
+{
+  "name": "unsubscribeRecipient",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-recipients-unsubscribeRecipient",
+  "customRole": false,
+  "handler": "recipients/unsubscribeRecipient/handler.default",
+  "timeout": 6,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [
+    {
+      "path": "lists/{listId}/recipients/{recipientId}/unsubscribe",
+      "method": "GET",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "listId": "$input.params('listId')",
+          "campaignId": "$input.params('cid')",
+          "recipientId": "$input.params('recipientId')"
+        }
+      },
+      "responses": {
+        "400": {
+          "statusCode": "400"
+        },
+        "default": {
+          "statusCode": "302",
+          "responseParameters": {
+            "method.response.header.location" : "integration.response.body.url"
+          },
+          "responseModels": {
+            "application/json;charset=UTF-8": "Empty"
+          },
+          "responseTemplates": {
+            "application/json;charset=UTF-8": ""
+          }
+        }
+      }
+    }
+  ],
+  "events": [],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "RECIPIENTS_TABLE": "$${recipientsTable}",
+    "UNSUBSCRIBED_RECIPIENT_TOPIC_ARN": "${unsubscribedRecipientTopicARN}",
+    "UNSUBSCRIBED_CALLBACK_URL": "${unsubscribedCallbackUrl}",
+    "LISTS_TABLE": "$${listsTable}",
+    "EVENTS_ROUTER_STREAM_NAME": "${eventsRouterStreamName}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

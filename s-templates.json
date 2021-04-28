@@ -1,0 +1,243 @@
+{
+  "logsStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ],
+    "Resource": "arn:aws:logs:${region}:*:*"
+  },
+  "sqsStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "sqs:ChangeMessageVisibility",
+      "sqs:ChangeMessageVisibilityBatch",
+      "sqs:DeleteMessage",
+      "sqs:DeleteMessageBatch",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl",
+      "sqs:ReceiveMessage",
+      "sqs:CreateQueue",
+      "sqs:SendMessage",
+      "sqs:PurgeQueue"
+    ],
+    "Resource": "arn:aws:sqs:${region}:*:*"
+  },
+  "sesStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "ses:SendEmail",
+      "ses:SendRawEmail"
+    ],
+    "Resource": "*"
+  },
+  "kinesisStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "kinesis:PutRecord",
+      "kinesis:GetRecords",
+      "kinesis:GetShardIterator",
+      "kinesis:DescribeStream",
+      "kinesis:ListStreams"
+    ],
+    "Resource": "*"
+  },
+  "lambdaStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "lambda:InvokeAsync",
+      "lambda:InvokeFunction",
+      "dynamodb:BatchGetItem",
+      "dynamodb:BatchWriteItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:GetItem",
+      "dynamodb:GetRecords",
+      "dynamodb:PutItem",
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:UpdateItem",
+      "sns:Publish",
+      "cloudwatch:PutMetricAlarm"
+    ],
+    "Resource": [
+      "*"
+    ]
+  },
+  "iotStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "iot:Publish"
+    ],
+    "Resource": [
+      "*"
+    ]
+  },
+  "apiGatewayStatementTemplate": {
+    "Effect": "Allow",
+    "Action": [
+      "apigateway:POST",
+      "apigateway:DELETE"
+    ],
+    "Resource": [
+      "${publicApiARN}"
+    ]
+  },
+  "fetchSenderFunctionName": "${project}-users-fetchSender",
+  "createSegmentFunctionName": "${project}-lists-${stage}-createSegment",
+  "getSegmentFunctionName": "${project}-lists-${stage}-getSegment",
+  "updateSegmentFunctionName": "${project}-lists-${stage}-updateSegment",
+  "listSegmentMembersFunctionName": "${project}-lists-${stage}-listSegmentMembers",
+  "listSegmentsFunctionName": "${project}-lists-${stage}-listSegments",
+  "listRecipientsFunctionName": "${project}-lists-${stage}-searchRecipientsRaw",
+  "searchRecipientsFunctionName": "${project}-recipients-searchRecipients",
+  "checkSubscriptionLimitsFunctionName": "${project}-subscriptions-checkSubscriptionLimits",
+  "getSubscriptionDetailsFunctionName": "${project}-subscriptions-getSubscriptionDetails",
+  "getTotalRecipientsFunctionName": "${project}-recipients-getTotalRecipients",
+  "sendEmailsTopic": "${project}-${stage}-sendEmails",
+  "eventsBusTopic": "${project}-${stage}-eventsBus",
+  "emailAdminsTopic": "${project}-${stage}-emailAdmins",
+  "emailNotificationsTopic": "${project}-${stage}-emailNotifications",
+  "precompileCampaignTopic": "${project}-${stage}-precompileCampaign",
+  "precompileEmailTopic": "${project}-${stage}-precompileEmail",
+  "sendCampaignTopic": "${project}-${stage}-sendCampaign",
+  "linksTable": "${project}-${stage}-links",
+  "opensTable": "${project}-${stage}-opens",
+  "clicksTable": "${project}-${stage}-clicks",
+  "opensReportTable": "${project}-${stage}-opens-report",
+  "clicksReportTable": "${project}-${stage}-clicks-report",
+  "scheduledCampaignsTable": "${project}-${stage}-scheduledCampaigns",
+  "campaignsTable": "${project}-${stage}-campaigns",
+  "scheduledEmailsTable": "${project}-${stage}-scheduledEmails",
+  "automationActionsTable": "${project}-${stage}-automation-actions",
+  "automationsTable": "${project}-${stage}-automations",
+  "listSegmentsTable": "${project}-${stage}-list-segments",
+  "segmentIdIndex": "${project}-${stage}-list-segmentsIdIndex",
+  "campaignsSentAtIndex": "${project}-${stage}-campaignsSentAtIndex",
+  "campaignsScheduledAtIndex": "${project}-${stage}-campaignsScheduledAtIndex",
+  "reportsUserIndex": "${project}-${stage}-reportsUserIndex",
+  "automationsIndex": "${project}-${stage}-automationsIndex",
+  "automationsFootprintStatusIndex": "${project}-${stage}-automationsFootprintStatusIndex",
+  "automationStatusIndex": "${project}-${stage}-automationStatusIndex",
+  "esRecipientsIndexName": "mm_${stage}_recipients_index",
+  "esRecipientsIndexType": "recipients",
+  "usersTable": "${project}-${stage}-users",
+  "usersEmailIndex": "${project}-${stage}-usersEmailIndex",
+  "usersAmazonCustomerIndex": "${project}-${stage}-usersAmazonCustomerIndex",
+  "usersApiKeyIndex": "${project}-${stage}-usersApiKeyIndex",
+  "listsTable": "${project}-${stage}-lists",
+  "recipientsTable": "${project}-${stage}-recipients",
+  "reportsTable": "${project}-${stage}-reports",
+  "templatesTable": "${project}-${stage}-templates",
+  "expertsTable": "${project}-${stage}-experts",
+  "expertsTypeCountryIndex": "${project}-${stage}-expertsTypeCountryIndex",
+  "paymentLogsTable": "${project}-${stage}-payment-logs",
+  "paymentLogsAffiliateRefIndex": "${project}-${stage}-paymentLogsAffiliateRefIndex",
+  "attachRecipientsTopic": "${project}-${stage}-attachRecipients",
+  "attachListRecipientsTopic": "${project}-${stage}-attachListRecipients",
+  "attachSegmentRecipientsTopic": "${project}-${stage}-attachSegmentRecipients",
+  "attachRecipientsCountTopic": "${project}-${stage}-attachRecipientsCount",
+  "updateUserReputationTopic": "${project}-${stage}-updateUserReputation",
+  "attachSenderTopic": "${project}-${stage}-attachSender",
+  "updateUserRepuationTopic": "${project}-${stage}-updateUserReputation",
+  "updateCampaignTopic": "${project}-${stage}-updateCampaign",
+  "unsubscribedRecipientTopic": "${project}-${stage}-unsubscribedRecipient",
+  "updateListImportStatusTopic": "${project}-${stage}-updateListImportStatus",
+  "staticDataBucket": "static.moonmail.${stage}.${region}",
+  "recipientsImportBucket": "recipients.moonmail.${stage}.${region}",
+  "listsExportBucket": "list-exports.moonmail.${stage}.${region}",
+  "screenshotsFunctionName": "moonmail-screenshots-service-${stage}-takeScreenshotFromHtml",
+  "responses": {
+    "302": {
+      "statusCode": "302",
+      "selectionPattern": "http.*",
+      "responseParameters": {
+        "method.response.header.Location": "integration.response.body.errorMessage"
+      },
+      "responseModels": {
+        "application/json": "Empty"
+      },
+      "responseTemplates": {
+        "application/json": "$input.path('$')",
+        "application/x-www-form-urlencoded": "$input.path('$')"
+      }
+    },
+    "400": {
+      "statusCode": "400",
+      "selectionPattern": ".*\"status\":400.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "401": {
+      "statusCode": "401",
+      "selectionPattern": ".*\"status\":401.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "403": {
+      "statusCode": "403",
+      "selectionPattern": ".*\"status\":403.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "404": {
+      "statusCode": "404",
+      "selectionPattern": ".*\"status\":404.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "409": {
+      "statusCode": "409",
+      "selectionPattern": ".*\"status\":409.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "500": {
+      "statusCode": "500",
+      "selectionPattern": ".*\"status\":500.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "503": {
+      "statusCode": "503",
+      "selectionPattern": ".*\"status\":503.*",
+      "responseParameters": {},
+      "responseTemplates": {
+        "application/json": "$input.path('$.errorMessage')"
+      }
+    },
+    "default": {
+      "statusCode": "200",
+      "responseModels": {
+        "application/json": "Empty"
+      },
+      "responseTemplates": {
+        "application/json": ""
+      }
+    }
+  },
+  "corsSettings": {
+    "allowOrigin": "*",
+    "allowHeaders": [
+      "X-Amz-Security-Token",
+      "Authorization",
+      "Content-Type",
+      "X-Amz-Date",
+      "X-Api-Key",
+      "authToken",
+      "Accept"
+    ]
+  }
+}

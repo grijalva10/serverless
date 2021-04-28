@@ -1,0 +1,40 @@
+{
+  "Records": [
+    {
+      "eventID": "2bab454ff6bc5fcbdb56f43fbc632d90",
+      "eventName": "INSERT",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-east-1",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1476200340,
+        "Keys": {
+          "linkId": {
+            "S": "ciu5ix48q000201pa180m6dw7"
+          },
+          "recipientId": {
+            "S": "ZGF2aWQuZ2FyY2lhQG1pY3JvYXBwcy5jb20"
+          }
+        },
+        "NewImage": {
+          "linkId": {
+            "S": "ciu5ix48q000201pa180m6dw7"
+          },
+          "campaignId": {
+            "S": "ciu5iwnha000001qs4id3w9es"
+          },
+          "recipientId": {
+            "S": "ZGF2aWQuZ2FyY2lhQG1pY3JvYXBwcy5jb20"
+          },
+          "timestamp": {
+            "N": "1476200394"
+          }
+        },
+        "SequenceNumber": "23507500000000010024541685",
+        "SizeBytes": 204,
+        "StreamViewType": "NEW_IMAGE"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:us-east-1:862946620411:table/MoonMail-v2-dev-clicks/stream/2016-10-06T16:25:57.836"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "name": "sendEmails",
+  "customName": "${project}-sender-sendEmails",
+  "customRole": false,
+  "handler": "sender/sendEmails/handler.handler",
+  "timeout": 300,
+  "memorySize": 1024,
+  "events": [
+    {
+      "name": "sendEmailsSns",
+      "type": "sns",
+      "config": {
+        "topicName": "$${sendEmailsTopic}"
+      }
+    }
+  ],
+  "runtime": "babel",
+  "custom": {
+    "runtime": {
+      "babel": {
+        "presets": ["es2015"]
+      },
+      "handlerExt": "js",
+      "requires": [],
+      "plugins": [],
+      "transforms": [],
+      "exclude": [],
+      "ignore": [
+        "aws-sdk"
+      ],
+      "extensions": [],
+      "minify": true
+    }
+  },
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "EMAIL_NOTIFICATIONS_TOPIC_ARN": "${emailNotificationsTopicARN}",
+    "GET_USER_DATA_FUNCTION_NAME": "${project}-users-getUserData",
+    "API_HOST": "${apiHost}",
+    "LOG_LEVEL": "error"
+  }
+}

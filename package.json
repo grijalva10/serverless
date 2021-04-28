@@ -1,0 +1,46 @@
+{
+  "name": "MoonMail-v2",
+  "version": "0.0.1",
+  "description": "A Serverless Project and its Serverless Plugin dependencies.",
+  "author": "me",
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/"
+  },
+  "scripts": {
+    "install-all": "npm install --loglevel error && npm install ./events --prefix ./events --loglevel error && npm install ./api --prefix ./api --loglevel error",
+    "remove-all": "rm -rf node_modules && rm -rf ./events/node_modules && rm -rf ./api/node_modules"
+  },
+  "dependencies": {
+    "address-format": "^0.0.3",
+    "babelify": "^7.2.0",
+    "base64-url": ">=2.0.0",
+    "bluebird": "^3.5.1",
+    "cf-canary": "0.0.1",
+    "serverless": "^2.38.0",
+    "serverless-cors-plugin": "^0.4.1"
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.2.2",
+    "babel-plugin-transform-async-to-module-method": "^6.16.0",
+    "babel-plugin-transform-builtin-extend": "^1.1.0",
+    "babel-plugin-transform-promise-to-bluebird": "^1.1.1",
+    "babel-plugin-transform-runtime": "^6.15.0",
+    "babel-polyfill": "^6.7.4",
+    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-stage-3": "^6.17.0",
+    "babel-register": "^6.26.0",
+    "babelify": "^7.2.0",
+    "csv-string": "^2.3.3",
+    "eslint": "^4.19.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.7.0",
+    "serverless-meta-sync": "^0.1.0",
+    "serverless-runtime-babel": "github:serverless/serverless-runtime-babel",
+    "uuid": "^2.0.1"
+  }
+}

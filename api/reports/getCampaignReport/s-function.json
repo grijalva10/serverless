@@ -1,0 +1,69 @@
+{
+  "name": "getCampaignReport",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-reports-getCampaignReport",
+  "customRole": false,
+  "handler": "reports/getCampaignReport/handler.default",
+  "timeout": 6,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": [],
+    "cors": "$${corsSettings}"
+  },
+  "endpoints": [
+    {
+      "path": "/campaigns/{campaignId}/report",
+      "method": "GET",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "campaignId": "$input.params('campaignId')",
+          "authToken": "$input.params('Authorization')",
+          "options": {
+            "fields": "$input.params('fields')",
+            "include_fields": "$input.params('include_fields')"
+          }
+        }
+      },
+      "responses": "$${responses}"
+    },
+    {
+      "path": "/automations/{automationId}/actions/{actionId}/report",
+      "method": "GET",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "campaignId": "$input.params('actionId')",
+          "authToken": "$input.params('Authorization')",
+          "options": {
+            "fields": "$input.params('fields')",
+            "include_fields": "$input.params('include_fields')"
+          }
+        }
+      },
+      "responses": "$${responses}"
+    }
+  ],
+  "events": [],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "REPORTS_TABLE": "$${reportsTable}",
+    "DEBUG": "true"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

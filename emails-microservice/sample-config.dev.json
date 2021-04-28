@@ -1,0 +1,7 @@
+{
+  "REGION": "us-west-2",
+  "PROFILE": "default",
+  "CLICKS_TABLE": "MoonMail-v2-dev-clicks",
+  "OPENS_TABLE": "MoonMail-v2-dev-opens",
+  "ENCRYPTION_PWD": "password"
+}

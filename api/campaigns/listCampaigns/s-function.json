@@ -1,0 +1,53 @@
+{
+  "name": "listCampaigns",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-campaigns-listCampaigns",
+  "customRole": false,
+  "handler": "campaigns/listCampaigns/handler.default",
+  "timeout": 300,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": [],
+    "cors": "$${corsSettings}"
+  },
+  "endpoints": [
+    {
+      "path": "/campaigns",
+      "method": "GET",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "options": {
+            "page": "$input.params('page')",
+            "limit": "$input.params('limit')",
+            "fields": "$input.params('fields')",
+            "include_fields": "$input.params('include_fields')"
+          },
+          "filters": {
+            "archived": "$input.params('archived')"
+          },
+          "authToken": "$input.params('Authorization')"
+        }
+      },
+      "responses": "$${responses}"
+    }
+  ],
+  "events": [],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "CAMPAIGNS_TABLE": "$${campaignsTable}",
+    "ARCHIVED_INDEX_NAME": "$${campaignsArchivedIndex}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

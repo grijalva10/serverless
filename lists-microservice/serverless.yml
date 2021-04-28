@@ -1,0 +1,687 @@
+service: MoonMail-v2-lists
+useDotenv: true
+
+plugins:
+  - serverless-plugin-optimize
+  - serverless-offline
+  - serverless-aws-documentation
+  - serverless-domain-manager
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  profile: "default"
+  region: ${self:custom.config.REGION}
+  timeout: 300
+  environment:
+    REGION: "us-west-2"
+    SERVERLESS_REGION: ${self:custom.config.REGION}
+    LOG_LEVEL: ${self:custom.config.LOG_LEVEL}
+    LISTS_TABLE: ${self:custom.config.LISTS_TABLE}
+    RECIPIENTS_TABLE: ${self:custom.config.RECIPIENTS_TABLE}
+    LIST_SEGMENTS_TABLE: ${self:custom.config.LIST_SEGMENTS_TABLE}
+    ES_HOST: ${self:custom.config.ES_HOST}
+    ES_REGION: ${self:custom.config.ES_REGION}
+    LIST_RECIPIENT_STREAM_NAME: ${self:custom.resourcesPrefix}-listEventStream  
+    LIST_RECIPIENT_STREAM_NAME2: ${self:custom.resourcesPrefix}-listEventStream2 
+    IOT_ENDPOINT: ${file(./config.${self:custom.currentStage}.json):IOT_ENDPOINT}
+    GET_USER_CONTEXT_FUNCTION: ${file(./config.${self:custom.currentStage}.json):GET_USER_CONTEXT_FUNCTION}
+    ES_RECIPIENTS_INDEX_NAME: ${file(./config.${self:custom.currentStage}.json):ES_RECIPIENTS_INDEX_NAME}
+    ES_RECIPIENTS_INDEX_TYPE: ${file(./config.${self:custom.currentStage}.json):ES_RECIPIENTS_INDEX_TYPE}
+    DEAD_LETTER_QUEUE_URL:
+      Ref: ListMicroserviceDeadLetterQueue
+    RECIPIENTS_ACTIVITY_S3_BUCKET: ${file(./config.${self:custom.currentStage}.json):RECIPIENTS_ACTIVITY_S3_BUCKET}
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+        - "lambda:*"
+        - "kinesis:*"
+        - "firehorse:*"
+        - "s3:*"
+        - "sqs:*"
+        - "logs:*"
+        - "iot:*"
+        - "ec2:CreateNetworkInterface"
+        - "ec2:DescribeNetworkInterfaces"
+        - "ec2:DeleteNetworkInterface"
+      Resource: "*"
+
+custom:
+  defaultStage: dev
+  currentStage: ${opt:stage, self:custom.defaultStage}
+  resourcesPrefix: ${self:service}-${self:custom.currentStage}
+  recipientsBucket: next-recipients.moonmail.${self:custom.currentStage}.${self:provider.region}
+  config: ${file(./config.${self:custom.currentStage}.json)}
+  recipientsTableStreamArn: ${self:custom.config.RECIPIENTS_TABLE_STREAM_ARN}
+  serverless-offline:
+    babelOptions:
+      presets: ["es2015"]
+  customDomain:
+    domainName: ${self:custom.config.CUSTOM_API_HOST}
+    certificateName: ${self:custom.config.ACM_CERTIFICATE_NAME}
+    basePath: 'lists'
+    createRoute53Record: false
+  documentation:
+    api:
+      info:
+        version: '2'
+        title: MoonMail API
+        description: >
+          Welcome to the MoonMail API reference, which lets you easily inject, repair and burn
+          off recipients and metafields from your space.
+
+          The MoonMail API is organized around the REST methodology. It uses resource-oriented
+          URLs, and common HTTP response codes to indicate API errors. All requests are
+          authenticated using an `api-key` which can be obtained from your
+          <a href="https://app.moonmail.io/profile/api" target="_blank">profile</a>.
+        termsOfService: http://support.moonmail.io/terms-and-policies/terms-of-service
+        contact:
+          name: MoonMail
+          url: https://moonmail.io/
+          email: hi@moonmail.io
+      tags:
+        -
+          name: Recipients
+          description: Email recipients
+        -
+          name: Lists
+          description: Email recipients' lists
+    models:
+      -
+        name: Recipient
+        description: Recipient's model
+        contentType: "application/json"
+        schema:
+          type: object
+          required:
+            - id
+            - listId
+            - userId
+            - email
+            - status
+          properties:
+            id:
+              type: string
+            listId:
+              type: string
+            userId:
+              type: string
+            email:
+              type: string
+            subscriptionOrigin:
+              type: string
+              enum:
+                - signupForm
+                - manual
+                - listImport
+                - api
+            isConfirmed:
+              type: boolean
+            status:
+              type: string
+              enum:
+                - awaitingConfirmation
+                - subscribed
+            metadata:
+              type: object
+      -
+        name: List
+        description: Email list's model
+        contentType: "application/json"
+        schema:
+          type: object
+          required:
+            - id
+            - userId
+            - name
+          properties:
+            id:
+              type: string
+            userId:
+              type: string
+            name:
+              type: string
+            processed:
+              type: boolean
+            archived:
+              type: boolean
+            total:
+              type: integer
+              minimum: 0
+            subscribedCount:
+              type: integer
+              minimum: 0
+            unsubscribedCount:
+              type: integer
+              minimum: 0
+            awaitingConfirmationCount:
+              type: integer
+              minimum: 0
+            complainedCount:
+              type: integer
+              minimum: 0
+            bouncedCount:
+              type: integer
+              minimum: 0
+            totalPostProcessed:
+              type: integer
+              minimum: 0
+            createdAt:
+              type: integer
+              minimum: 0
+            importStatus:
+              type: object
+            metadataAttributes:
+              type: object
+            senderId:
+              type: string
+            successConfirmationUrl:
+              type: string
+            confirmationEmailBody:
+              type: string
+      -
+        name: RecipientsList
+        description: A list of recipients
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "{{model: Recipient}}"
+            total:
+              type: integer
+              minimum: 0
+              description: Count of the recipients contained in the list
+      -
+        name: Lists
+        description: A set of recipients' lists
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "{{model: List}}"
+      -
+        name: NewRecipient
+        description: New recipient
+        contentType: "application/json"
+        schema:
+          type: object
+          required:
+            - email
+            - subscriptionOrigin
+            - status
+          properties:
+            email:
+              type: string
+              format: email
+            #subscriptionOrigin:
+            #  enum:
+            #    - signupForm
+            #    - listImport
+            #    - manual
+            #    - api
+            #  type: string
+            status:
+              enum:
+                - subscribed
+                - awaitingConfirmation
+              type: string
+            isConfirmed:
+              type: boolean
+            metadata:
+              type: object
+              properties: {}
+              additionalProperties: true
+      -
+        name: RecipientCreatedResponse
+        description: Create recipient response
+        contentType: "application/json"
+        schema:
+          type: object
+          required:
+            - recipient
+          properties:
+            recipient:
+              type: object
+              properties:
+                id:
+                  type: string
+      -
+        name: CreateRecipientRequest
+        description: Recipient's model
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            recipient:
+              $ref: "{{model: NewRecipient}}"
+      -
+        name: UpdateRecipientRequest
+        description: Recipient updates model
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            status:
+              enum:
+                - subscribed
+                - awaitingConfirmation
+                - unsubscribed
+              type: string
+            isConfirmed:
+              type: boolean
+            metadata:
+              type: object
+              properties: {}
+              additionalProperties: true
+          additionalProperties: false
+      -
+        name: EmptyResponse
+        description: Empty response
+        contentType: "application/json"
+        schema:
+          type: object
+      - name: RecipientMalformed
+        description: Malformed recipient error
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            message:
+              type: string
+
+package:
+  individually: true
+
+functions:
+  # Event handlers
+  eventStreamProcessorHandler:
+    handler: handler.eventStreamProcessor
+    name: ${self:custom.resourcesPrefix}-eventStreamProcessor
+    events:
+      - stream:
+          type: kinesis
+          batchSize: 100
+          startingPosition: TRIM_HORIZON
+          arn:
+            Fn::GetAtt:
+              - ListEventStream
+              - Arn
+  eventStreamProcessorHandler2:
+    handler: handler.eventStreamProcessor
+    name: ${self:custom.resourcesPrefix}-eventStreamProcessor2
+    events:
+      - stream:
+          type: kinesis
+          batchSize: 100
+          startingPosition: TRIM_HORIZON
+          arn:
+            Fn::GetAtt:
+              - ListEventStream2
+              - Arn
+
+  # recipientCreatedEventHandler:
+  #   handler: handler.recipientCreatedProcessor
+  #   name: ${self:custom.resourcesPrefix}-recipientCreatedEventHandler
+  #   events:
+  #     - stream:
+  #         type: kinesis
+  #         batchSize: 100
+  #         startingPosition: TRIM_HORIZON
+  #         arn:
+  #           Fn::GetAtt:
+  #             - ListEventStream
+  #             - Arn
+
+  # recipientUpdatedEventHandler:
+  #   handler: handler.recipientUpdatedProcessor
+  #   name: ${self:custom.resourcesPrefix}-recipientUpdatedEventHandler
+  #   events:
+  #     - stream:
+  #         type: kinesis
+  #         batchSize: 100
+  #         startingPosition: TRIM_HORIZON
+  #         arn:
+  #           Fn::GetAtt:
+  #             - ListEventStream
+  #             - Arn
+
+  # recipientDeletedEventHandler:
+  #   handler: handler.recipientDeletedProcessor
+  #   name: ${self:custom.resourcesPrefix}-recipientDeletedEventHandler
+  #   events:
+  #     - stream:
+  #         type: kinesis
+  #         batchSize: 100
+  #         startingPosition: TRIM_HORIZON
+  #         arn:
+  #           Fn::GetAtt:
+  #             - ListEventStream
+  #             - Arn
+
+  importRecipients:
+    handler: handler.importRecipientsCsvFromS3
+    name: ${self:custom.resourcesPrefix}-importRecipients
+    events:
+      - s3:
+          bucket: ${self:custom.recipientsBucket}
+          event: s3:ObjectCreated:*
+
+  syncRecipientStreamWithES:
+    handler: handler.syncRecipientStreamWithES
+    name: ${self:custom.resourcesPrefix}-syncRecipientStreamWithES
+    events:
+      - stream:
+          type: dynamodb
+          batchSize: 50
+          startingPosition: TRIM_HORIZON
+          arn: ${self:custom.recipientsTableStreamArn}
+              
+  # Public API
+  createRecipient:
+    handler: handler.createRecipient
+    name: ${self:custom.resourcesPrefix}-createRecipient
+    events:
+      - http:
+          path: /{listId}/recipients
+          method: post
+          private: true
+          request:
+            parameters:
+              paths:
+                listId: true
+          documentation:
+            summary: Creates a recipient
+            tags:
+              - Recipients
+            description: >
+              Creates a recipient within the specified list. You can get the list
+              ID in your <a target="_blank" href="https://app.moonmail.io/lists">MoonMail
+              dashboard</a>, under the Settings tab after selecting your list
+            pathParams:
+              -
+                name: listId
+                description: The ID of the list the recipient belongs to
+                required: true
+            requestModels:
+              "application/json": CreateRecipientRequest
+            requestBody:
+              description: Recipient create request body
+            methodResponses:
+              -
+                statusCode: "202"
+                description: "Request accepted"
+                responseModels:
+                  "application/json": RecipientCreatedResponse
+                responseHeaders:
+                  -
+                    name: Location
+                    description: Path of the newly created recipient
+                    type: string
+              -
+                statusCode: "422"
+                description: "Recipient malformed"
+                responseModels:
+                  "application/json": RecipientMalformed
+
+  updateRecipient:
+    handler: handler.updateRecipient
+    name: ${self:custom.resourcesPrefix}-updateRecipient
+    events:
+      - http:
+          path: /{listId}/recipients/{recipientId}
+          method: put
+          private: true
+          request:
+            parameters:
+              paths:
+                listId: true
+                recipientId: true
+          documentation:
+            summary: Updates a recipient
+            tags:
+              - Recipients
+            description: >
+              Updates the specified recipient. You can get the list
+              ID in your <a target="_blank" href="https://app.moonmail.io/lists">MoonMail
+              dashboard</a>, under the Settings tab after selecting your list
+            pathParams:
+              -
+                name: listId
+                description: The ID of the list the recipient belongs to
+                required: true
+              -
+                name: recipientId
+                description: The ID of the recipient
+            requestModels:
+              "application/json": UpdateRecipientRequest
+            requestBody:
+              description: Recipient update request body
+            methodResponses:
+              -
+                statusCode: "202"
+                description: "Request accepted"
+              -
+                statusCode: "422"
+                description: "Recipient malformed"
+                responseModels:
+                  "application/json": RecipientMalformed
+
+  getRecipient:
+    handler: handler.getRecipient
+    name: ${self:custom.resourcesPrefix}-getRecipient
+    events:
+      - http:
+          path: /{listId}/recipients/{recipientId}
+          method: get
+          private: true
+          request:
+            parameters:
+              paths:
+                listId: true
+                recipientId: true
+          documentation:
+            summary: Gets a recipient
+            tags:
+              - Recipients
+            description: >
+              Gets a single recipient of the specified list. You can get the list
+              ID in your <a target="_blank" href="https://app.moonmail.io/lists">MoonMail
+              dashboard</a>, under the Settings tab after selecting your list
+            pathParams:
+              -
+                name: listId
+                description: The ID of the list the recipient belongs to
+                required: true
+              -
+                name: recipientId
+                description: The ID of the recipient
+            methodResponses:
+              -
+                statusCode: "200"
+                description: "OK"
+                responseModels:
+                  "application/json": Recipient
+              -
+                statusCode: "404"
+                description: "Recipient not found"
+
+  searchRecipientsRaw:
+    handler: handler.searchRecipientsRaw
+    name: ${self:custom.resourcesPrefix}-searchRecipientsRaw
+
+  listRecipients:
+    handler: handler.listRecipients
+    name: ${self:custom.resourcesPrefix}-listRecipients
+    events:
+      - http:
+          path: /{listId}/recipients
+          method: get
+          private: true
+          request:
+            parameters:
+              paths:
+                listId: true
+              querystring:
+                limit: true
+                page: true
+                status: true
+                q: true
+          documentation:
+            summary: Gets a list of recipients
+            tags:
+              - Recipients
+            description: >
+              Gets a set recipients of the specified list. You can get the list
+              ID in your <a target="_blank" href="https://app.moonmail.io/lists">MoonMail
+              dashboard</a>, under the Settings tab after selecting your list
+            pathParams:
+              -
+                name: listId
+                description: The ID of the list the recipient belongs to
+                required: true
+            queryParams:
+              -
+                name: page
+                description: "Page to show (default: 1)"
+              -
+                name: limit
+                description: "Amount of results (default: 10; maximum: 100)"
+            methodResponses:
+              -
+                statusCode: "200"
+                description: "OK"
+                responseModels:
+                  "application/json": RecipientsList
+
+  getAllLists:
+    handler: handler.getAllLists
+    name: ${self:custom.resourcesPrefix}-getAllLists
+    events:
+      - http:
+          path: /
+          method: get
+          private: true
+          documentation:
+            summary: Gets all the user's lists
+            tags:
+              - Lists
+            description: >
+              Gets all the recipients' lists of the specified user. You can get the list
+              ID in your <a target="_blank" href="https://app.moonmail.io/lists">MoonMail
+              dashboard</a>, under the Settings tab after selecting your list
+            methodResponses:
+              -
+                statusCode: "200"
+                description: "OK"
+                responseModels:
+                  "application/json": Lists
+  createSegment:
+    handler: handler.createSegment
+    name: ${self:custom.resourcesPrefix}-createSegment
+
+  updateSegment:
+   handler: handler.updateSegment
+   name: ${self:custom.resourcesPrefix}-updateSegment
+
+  deleteSegment:
+    handler: handler.deleteSegment
+    name: ${self:custom.resourcesPrefix}-deleteSegment
+
+  getSegment:
+    handler: handler.getSegment
+    name: ${self:custom.resourcesPrefix}-getSegment
+
+  listSegments:
+    handler: handler.listSegments
+    name: ${self:custom.resourcesPrefix}-listSegments
+
+  listSegmentMembers:
+    handler: handler.listSegmentMembers
+    name: ${self:custom.resourcesPrefix}-listSegmentMembers
+  
+resources:
+  Resources:
+    ListEventStream:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: ${self:custom.resourcesPrefix}-listEventStream
+        ShardCount: 1
+    ListEventStream2:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: ${self:custom.resourcesPrefix}-listEventStream2
+        ShardCount: 1
+    ListMicroserviceDeadLetterQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ListMicroserviceDeadLetterQueue
+        MessageRetentionPeriod: 1209600
+    # FirehoseToS3Role:
+    #   Type: AWS::IAM::Role
+    #   Properties:
+    #     RoleName: FirehoseToS3Role
+    #     AssumeRolePolicyDocument:
+    #       Statement:
+    #       - Effect: Allow
+    #         Principal:
+    #           Service:
+    #           - firehose.amazonaws.com
+    #         Action:
+    #         - sts:AssumeRole
+    #     Policies:
+    #     - PolicyName: FirehoseToS3Policy
+    #       PolicyDocument:
+    #         Statement:
+    #           - Effect: Allow
+    #             Action:
+    #             - s3:AbortMultipartUpload
+    #             - s3:GetBucketLocation
+    #             - s3:GetObject
+    #             - s3:ListBucket
+    #             - s3:ListBucketMultipartUploads
+    #             - s3:PutObject
+    #             Resource: '*'
+    # RecipientActivityBucket:
+    #   Type: AWS::S3::Bucket
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     BucketName: ${env:RECIPIENTS_ACTIVITY_S3_BUCKET}
+    # ServerlessKinesisFirehose:
+    #   Type: AWS::KinesisFirehose::DeliveryStream
+    #   Properties:
+    #     DeliveryStreamName: ${self:custom.resourcesPrefix}-firehorseRecipientsActivityS3
+    #     S3DestinationConfiguration:
+    #       BucketARN:
+    #         Fn::Join:
+    #         - ''
+    #         - - 'arn:aws:s3:::'
+    #           - Ref: RecipientActivityBucket
+    #       BufferingHints:
+    #         IntervalInSeconds: "60"
+    #         SizeInMBs: "1"
+    #       CompressionFormat: "UNCOMPRESSED"
+    #       Prefix: "firehorse/"
+    #       RoleARN: { Fn::GetAtt: [ FirehoseToS3Role, Arn ] }
+  Outputs:
+    ListEventStreamARN:
+      Description: ListEventStream Kinesis Stream ARN
+      Value:
+        'Fn::GetAtt':
+          - ListEventStream
+          - Arn
+    ListEventStream2ARN:
+      Description: ListEventStream Kinesis Stream 2 ARN
+      Value:
+        'Fn::GetAtt':
+          - ListEventStream2
+          - Arn

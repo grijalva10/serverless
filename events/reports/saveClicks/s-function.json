@@ -1,0 +1,34 @@
+{
+  "name": "saveClicks",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-reports-saveClicks",
+  "customRole": false,
+  "handler": "reports/saveClicks/handler.default",
+  "timeout": 300,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [],
+  "events": [
+    {
+      "name": "saveClicksStream",
+      "type": "kinesisstream",
+      "config": {
+        "streamArn": "${clicksStreamARN}",
+        "enabled": true
+      }
+    }
+  ],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "CLICKS_TABLE": "$${clicksTable}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

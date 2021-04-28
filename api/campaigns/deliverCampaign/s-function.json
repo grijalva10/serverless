@@ -1,0 +1,53 @@
+{
+  "name": "deliverCampaign",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-campaigns-deliverCampaign",
+  "customRole": false,
+  "handler": "campaigns/deliverCampaign/handler.default",
+  "timeout": 300,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": [],
+    "cors": "$${corsSettings}"
+  },
+  "endpoints": [
+    {
+      "path": "/campaigns/{campaignId}/send",
+      "method": "POST",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "campaign": "$input.json('$.campaign')",
+          "campaignId": "$input.params('campaignId')",
+          "authToken": "$input.params('Authorization')"
+        }
+      },
+      "responses": "$${responses}"
+    }
+  ],
+  "events": [],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "CAMPAIGNS_TABLE": "$${campaignsTable}",
+    "USERS_TABLE": "$${usersTable}",
+    "LISTS_TABLE": "$${listsTable}",
+    "UPDATE_CAMPAIGN_TOPIC_ARN": "${updateCampaignTopicARN}",
+    "SENT_AT_INDEX_NAME": "$${campaignsSentAtIndex}",
+    "ATTACH_SENDER_TOPIC_ARN": "${attachSenderTopicARN}",
+    "LIST_SEGMENT_MEMBERS_FUNCTION": "$${listSegmentMembersFunctionName}",
+    "CHECK_SUBSCRIPTION_LIMITS_FUNCTION": "$${checkSubscriptionLimitsFunctionName}",
+    "GET_TOTAL_RECIPIENTS_FUNCTION": "$${getTotalRecipientsFunctionName}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

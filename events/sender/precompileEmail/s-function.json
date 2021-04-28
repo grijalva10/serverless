@@ -1,0 +1,47 @@
+{
+  "name": "precompileEmail",
+  "customName": "${project}-sender-precompileEmail",
+  "customRole": false,
+  "handler": "sender/precompileEmail/handler.handler",
+  "timeout": 60,
+  "memorySize": 1024,
+  "events": [
+    {
+      "name": "precompileEmailSns",
+      "type": "sns",
+      "config": {
+        "topicName": "$${precompileEmailTopic}"
+      }
+    }
+  ],
+  "runtime": "babel",
+  "custom": {
+    "runtime": {
+      "babel": {
+        "presets": ["es2015"]
+      },
+      "handlerExt": "js",
+      "requires": [],
+      "plugins": [],
+      "transforms": [],
+      "exclude": [],
+      "ignore": [
+        "aws-sdk"
+      ],
+      "extensions": [],
+      "minify": true
+    }
+  },
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "SEND_CAMPAIGN_TOPIC_ARN": "${sendCampaignTopicARN}",
+    "SEND_EMAILS_TOPIC_ARN": "${sendEmailsTopicARN}",
+    "API_HOST": "${apiHost}",
+    "CLICKS_HOST": "${clicksHost}",
+    "UNSUBSCRIBE_API_HOST": "${unsubscribeApiHost}",
+    "RECIPIENTS_TABLE": "$${recipientsTable}",
+    "LISTS_TABLE": "$${listsTable}"
+  }
+}

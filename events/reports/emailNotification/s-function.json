@@ -1,0 +1,35 @@
+{
+  "name": "emailNotification",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-reports-emailNotification",
+  "customRole": false,
+  "handler": "reports/emailNotification/handler.default",
+  "timeout": 6,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": []
+  },
+  "endpoints": [],
+  "events": [
+    {
+      "name": "emailNotificationsTopic",
+      "type": "sns",
+      "config": {
+        "topicName": "$${emailNotificationsTopic}"
+      }
+    }
+  ],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "REPORTS_TABLE": "$${reportsTable}",
+    "RECIPIENTS_TABLE": "$${recipientsTable}"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}

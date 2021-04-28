@@ -1,0 +1,53 @@
+{
+  "name": "listRecipientsHttp",
+  "runtime": "babel",
+  "description": "Serverless Lambda function for project: MoonMail-v2",
+  "customName": "${project}-recipients-listRecipientsHttp",
+  "customRole": false,
+  "handler": "recipients/listRecipientsHttp/handler.default",
+  "timeout": 6,
+  "memorySize": 1024,
+  "authorizer": {},
+  "custom": {
+    "excludePatterns": [],
+    "cors": "$${corsSettings}"
+  },
+  "endpoints": [
+    {
+      "path": "/lists/{listId}/recipients",
+      "method": "GET",
+      "type": "AWS",
+      "authorizationType": "none",
+      "authorizerFunction": false,
+      "apiKeyRequired": false,
+      "requestParameters": {},
+      "requestTemplates": {
+        "application/json": {
+          "options": {
+            "q": "$input.params('q')",
+            "status": "$input.params('status')"
+          },
+          "pagination": {
+            "size": "$input.params('size')",
+            "from": "$input.params('from')"
+          },
+          "listId": "$input.params('listId')",
+          "authToken": "$input.params('Authorization')"
+        }
+      },
+      "responses": "$${responses}"
+    }
+  ],
+  "events": [],
+  "environment": {
+    "SERVERLESS_PROJECT": "${project}",
+    "SERVERLESS_STAGE": "${stage}",
+    "SERVERLESS_REGION": "${region}",
+    "LIST_RECIPIENTS_FUNCTION": "$${listRecipientsFunctionName}",
+    "LOG_LEVEL": "info"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  }
+}
